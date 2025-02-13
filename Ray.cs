@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Ray_Tracer
 {
-    class Ray
+    public class Ray
     {
         public Vector3 origin;
         public Vector3 direction;
@@ -16,6 +16,11 @@ namespace Ray_Tracer
         {
             this.origin = origin;
             this.direction = direction;
+        }
+
+        public Vector3 at(double t)
+        {
+            return origin + (direction * (float) t);
         }
     }
 }

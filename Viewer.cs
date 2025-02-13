@@ -16,8 +16,12 @@ namespace Ray_Tracer
         static Random rng = new Random();
 
         double aspectRatio = 16.0 / 9.0;
-        int width = 1280;
+        int width = 800;
         int height;
+
+        static int samples = 100;
+        double pixelSamplesScale = 1.0 / samples;
+        int maxDepth = 50;
 
         public Viewer()
         {
@@ -38,46 +42,77 @@ namespace Ray_Tracer
 
             // Set up camera
             Vector3 origin = new Vector3(0, 0, 0);
-            Vector3 direction = new Vector3(0, 0, 1);
-            Vector3 normal = new Vector3(0, 1, 0);
-            double focusDistance = 10;
 
-            Camera cam = new Camera(origin, direction, normal, 20, aspectRatio, 0.1, focusDistance);
+            Camera cam = new Camera(origin, aspectRatio, width, height);
 
-            int numRays = 1;
+            // Set up world
+            World world = new World();
+            world.Add(new Sphere(new Vector3(0, 0, -1), 0.5));
+            world.Add(new Sphere(new Vector3(0, -100.5f, -1), 100));
 
             // Color each pixel of the bitmap
-            for (int y = 0; y < height; ++y)
+            for (int y = 0; y < height; y++)
             {
-                for (int x = 0; x < width; ++x)
+                for (int x = 0; x < width; x++)
                 {
-                    for (int s = 0; s < numRays; ++s)
-                    {
-                        double flippedY = height - y - 1;
-                        double u = (double)(x + rng.NextDouble()) / (width - 1);
-                        double v = (flippedY + rng.NextDouble()) / (height - 1);
+                    Vector3 color = new Vector3(0, 0, 0);
 
-                        Ray r = cam.getRay(u, v);
-                        img.SetPixel(x, y, getColor(rayColor(r)));
+                    for (int s = 0; s < samples; s++)
+                    {
+                        Ray r = cam.getRay(x, y);
+                        color += rayColor(r, maxDepth, world);
                     }
+
+                    img.SetPixel(x, y, getColor(color));
                 }
             }
 
             return img;
         }
 
-        private Vector3 rayColor(Ray r)
+        private Vector3 rayColor(Ray r, int depth, World w)
         {
-            Vector3 direction = Vector3.Normalize(r.direction);
-            var a = 0.5 * (direction.Y + 1.0);
+            if (depth <= 0)
+                return new Vector3(0, 0, 0);
 
-            return (float) (1.0 - a) * new Vector3(1.0f) + (float) a * new Vector3(0.5f, 0.7f, 1.0f);
+            HitRecord record = w.rayHit(r, 0.001f, int.MaxValue);
+
+            if (record.hit)
+            {
+                Vector3 dir = record.normal + randomUnitVector();
+                return 0.5f * rayColor(new Ray(record.point, dir), depth - 1, w);
+            }
+
+            Vector3 unitdir = Vector3.Normalize(r.direction);
+            float a = 0.5f * (unitdir.Y + 1.0f);
+            return ((1.0f - a) * new Vector3(1, 1, 1)) + (a * new Vector3(0.5f, 0.7f, 1));
         }
 
         private Color getColor(Vector3 color)
         {
-            color = color * 255f;
-            return Color.FromArgb((int) (color.X), (int) (color.Y), (int) (color.Z));
+            color = (float) pixelSamplesScale * color;
+
+            float min = 0;
+            float max = 0.999f;
+
+            int r = (int)(255 * Clamp(color.X, min, max));
+            int g = (int)(255 * Clamp(color.Y, min, max));
+            int b = (int)(255 * Clamp(color.Z, min, max));
+
+            return Color.FromArgb(r, g, b);
+        }
+
+        private float Clamp(float value, float min, float max)
+        {
+            if (value < min) value = min;
+            if (value > max) value = max;
+            return value;
+        }
+
+        private Vector3 randomUnitVector()
+        {
+            Vector3 vec = Vector3.Normalize(new Vector3((float) rng.NextDouble(), (float) rng.NextDouble(), (float) rng.NextDouble()));
+            return vec;
         }
 
         /// <summary>

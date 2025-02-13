@@ -9,54 +9,50 @@ namespace Ray_Tracer
 {
     class Camera
     {
-        private Vector3 origin;
-        private Vector3 corner;
-        private Vector3 horizontal;
-        private Vector3 vertical;
-        private Vector3 w;
-        private Vector3 u;
-        private Vector3 v;
-        double lensRadius;
+        float focalLength;
+        float viewportHeight;
+        float viewportWidth;
+        public Vector3 origin;
+        Vector3 vpu;
+        Vector3 vpv;
+        public Vector3 pdu;
+        public Vector3 pdv;
+        Vector3 viewportOrigin;
+        public Vector3 pixelOrigin;
 
-        public Camera(Vector3 origin, Vector3 direction, Vector3 normal, int fieldOfView, double aspectRatio, double radius, double focusDistance)
+        Random rng = new Random();
+
+        public Camera(Vector3 origin, double aspectRatio, int width, int height)
         {
-            float theta = (float) (fieldOfView * Math.PI / 180.0);
-            float viewportHeight = (float) (2.0 * Math.Tan(theta / 2.0));
-            float viewportWidth = (float) (viewportHeight * aspectRatio);
-
-            w = Vector3.Normalize(Vector3.Subtract(origin, direction));
-            u = Vector3.Normalize(Vector3.Cross(normal, w));
-            v = Vector3.Cross(w, u);
-
+            focalLength = 1.0f;
+            viewportHeight = 2.0f;
+            viewportWidth = viewportHeight * (float)aspectRatio;
             this.origin = origin;
-            horizontal = Vector3.Multiply((float) focusDistance, Vector3.Multiply(new Vector3(viewportWidth), u));
-            vertical = Vector3.Multiply((float)focusDistance, Vector3.Multiply(new Vector3(viewportHeight), v));
-            corner = Vector3.Subtract(Vector3.Subtract(Vector3.Subtract(origin, Vector3.Divide(horizontal, new Vector3(2))), Vector3.Divide(vertical, new Vector3(2))), Vector3.Multiply(w, new Vector3((float) focusDistance)));
 
-            lensRadius = radius / 2.0;
+            vpu = new Vector3(viewportWidth, 0, 0);
+            vpv = new Vector3(0, -viewportHeight, 0);
+
+            pdu = Vector3.Divide(vpu, width);
+            pdv = Vector3.Divide(vpv, height);
+
+            viewportOrigin = origin - new Vector3(0, 0, focalLength) - Vector3.Divide(vpu, 2) - Vector3.Divide(vpv, 2);
+            pixelOrigin = viewportOrigin + 0.5f * (pdu + pdv);
         }
 
-        public Ray getRay(double s, double t)
+        public Ray getRay(int x, int y)
         {
-            Vector3 dir = Vector3.Multiply(randomInUnitSphere(-1.0, 1.0), new Vector3((float) lensRadius));
-            Vector3 offset = Vector3.Add(Vector3.Multiply(u, new Vector3(dir.X)), Vector3.Multiply(v, new Vector3(dir.Y)));
+            Vector3 offset = sampleSquare();
+            Vector3 sample = pixelOrigin + ((x + offset.X) * pdu) + ((y + offset.Y) * pdv);
 
-            return new Ray(Vector3.Add(origin, offset), Vector3.Add(corner, Vector3.Subtract(Vector3.Subtract(Vector3.Add(Vector3.Multiply(horizontal, new Vector3((float) s)), Vector3.Multiply(vertical, new Vector3((float) t))), origin), offset)));
+            Vector3 rayOrigin = origin;
+            Vector3 rayDirection = sample - rayOrigin;
+
+            return new Ray(rayOrigin, rayDirection);
         }
 
-        public Vector3 randomInUnitSphere(double min, double max)
+        public Vector3 sampleSquare()
         {
-            Random rng = new Random();
-
-            double range = max - min;
-
-            while (true)
-            {
-                Vector3 vec = new Vector3((float)(range * rng.NextDouble() + min), (float)(range * rng.NextDouble() + min), (float)(range * rng.NextDouble() + min));
-                if (vec.LengthSquared() < 1.0)
-                    return vec;
-            }
+            return new Vector3((float) (rng.NextDouble() - 0.5), (float) (rng.NextDouble() - 0.5), 0);
         }
-
     }
 }
