@@ -13,6 +13,7 @@ namespace Ray_Tracer
         public Vector3 normal { get; set; }
         public double t { get; set; }
         public bool hit { get; set; }
+        public Material mat { get; set; }
 
         public bool frontFace { get; set; }
 
@@ -21,12 +22,13 @@ namespace Ray_Tracer
             hit = false;
         }
 
-        public HitRecord(Vector3 point, Vector3 normal, double t, bool hit)
+        public HitRecord(Vector3 point, Vector3 normal, Material mat, double t, bool hit)
         {
             this.point = point;
             this.normal = normal;
             this.t = t;
             this.hit = hit;
+            this.mat = mat;
         }
 
         public void setFaceNormal(Ray r, Vector3 outwardNormal)
@@ -82,11 +84,13 @@ namespace Ray_Tracer
     {
         public Vector3 center;
         public double radius;
+        public Material mat;
 
-        public Sphere(Vector3 center, double radius)
+        public Sphere(Vector3 center, double radius, Material mat)
         {
             this.center = center;
             this.radius = radius;
+            this.mat = mat;
         }
 
         public override HitRecord rayHit(Ray r, double tmin, double tmax)
@@ -116,6 +120,7 @@ namespace Ray_Tracer
             record.point = r.at(record.t);
             Vector3 outwardNormal = Vector3.Divide(record.point - center, (float) radius);
             record.setFaceNormal(r, outwardNormal);
+            record.mat = mat;
             record.hit = true;
 
             return record;

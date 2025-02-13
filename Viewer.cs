@@ -16,12 +16,12 @@ namespace Ray_Tracer
         static Random rng = new Random();
 
         double aspectRatio = 16.0 / 9.0;
-        int width = 800;
+        int width = 1280;
         int height;
 
         static int samples = 100;
         double pixelSamplesScale = 1.0 / samples;
-        int maxDepth = 50;
+        int maxDepth = 25;
 
         public Viewer()
         {
@@ -47,8 +47,20 @@ namespace Ray_Tracer
 
             // Set up world
             World world = new World();
-            world.Add(new Sphere(new Vector3(0, 0, -1), 0.5));
-            world.Add(new Sphere(new Vector3(0, -100.5f, -1), 100));
+            //Material lam = new Lambartian(new Vector3(1, 0, 0));
+            //Material met = new Metal(new Vector3(0, 1, 0), rng.NextDouble() / 2.0);
+            //world.Add(new Sphere(new Vector3(0, 0, -1), 0.5, met));
+            //world.Add(new Sphere(new Vector3(0, -100.5f, -1), 100, lam));
+
+            Material m1 = new Lambartian(new Vector3(0.8f, 0.8f, 0.0f));
+            Material m2 = new Lambartian(new Vector3(0.1f, 0.2f, 0.5f));
+            Material m3 = new Metal(new Vector3(0.8f, 0.8f, 0.8f));
+            Material m4 = new Metal(new Vector3(0.8f, 0.6f, 0.2f));
+
+            world.Add(new Sphere(new Vector3(0.0f, -100.5f, -1.0f), 100.0f, m1));
+            world.Add(new Sphere(new Vector3(0.0f, 0.0f, -1.2f), 0.5f, m2));
+            world.Add(new Sphere(new Vector3(-1.0f, 0.0f, -1.0f), 0.5f, m3));
+            world.Add(new Sphere(new Vector3(1.0f, 0.0f, -1.0f), 0.5f, m4));
 
             // Color each pixel of the bitmap
             for (int y = 0; y < height; y++)
@@ -75,12 +87,16 @@ namespace Ray_Tracer
             if (depth <= 0)
                 return new Vector3(0, 0, 0);
 
-            HitRecord record = w.rayHit(r, 0.001f, int.MaxValue);
+            HitRecord record = w.rayHit(r, 0.001f, double.MaxValue);
 
             if (record.hit)
             {
-                Vector3 dir = record.normal + randomUnitVector();
-                return 0.5f * rayColor(new Ray(record.point, dir), depth - 1, w);
+                ScatteredRecord sc = record.mat.scatter(r, record);
+
+                if (sc.scatter)
+                    return sc.attenuation * rayColor(sc.scatteredRay, depth - 1, w);
+
+                return new Vector3(0);
             }
 
             Vector3 unitdir = Vector3.Normalize(r.direction);
@@ -95,11 +111,23 @@ namespace Ray_Tracer
             float min = 0;
             float max = 0.999f;
 
-            int r = (int)(255 * Clamp(color.X, min, max));
-            int g = (int)(255 * Clamp(color.Y, min, max));
-            int b = (int)(255 * Clamp(color.Z, min, max));
+            float r = linearToGamma(color.X);
+            float g = linearToGamma(color.Y);
+            float b = linearToGamma(color.Z);
 
-            return Color.FromArgb(r, g, b);
+            r = (float) (256 * Math.Sqrt(Clamp(r, min, max)));
+            g = (float) (256 * Math.Sqrt(Clamp(g, min, max)));
+            b = (float) (256 * Math.Sqrt(Clamp(b, min, max)));
+
+            return Color.FromArgb((int)r, (int)g, (int)b);
+        }
+
+        private float linearToGamma(float x)
+        {
+            if (x > 0)
+                return (float) Math.Sqrt(x);
+
+            return 0;
         }
 
         private float Clamp(float value, float min, float max)
