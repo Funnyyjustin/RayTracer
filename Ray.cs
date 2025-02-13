@@ -18,6 +18,11 @@ namespace Ray_Tracer
             this.direction = direction;
         }
 
+        /// <summary>
+        /// Calculates the location on a ray, given some t-value.
+        /// </summary>
+        /// <param name="t">The given t-value.</param>
+        /// <returns>The location on the ray.</returns>
         public Vector3 at(double t)
         {
             return origin + (direction * (float) t);
