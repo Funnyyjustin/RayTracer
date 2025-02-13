@@ -23,7 +23,7 @@ namespace Ray_Tracer
 
     public abstract class Material
     {
-        Random rng = new Random();
+        protected Random rng = new Random();
 
         public abstract ScatteredRecord scatter(Ray r, HitRecord h);
 
@@ -89,6 +89,65 @@ namespace Ray_Tracer
         private Vector3 reflect(Vector3 v, Vector3 n)
         {
             return v - 2 * Vector3.Dot(v, n) * n;
+        }
+    }
+
+    public class Dielectric : Material
+    {
+        private float refractionIndex;
+
+        public Dielectric(float refractionIndex)
+        {
+            this.refractionIndex = refractionIndex;
+        }
+
+        public override ScatteredRecord scatter(Ray r, HitRecord h)
+        {
+            ScatteredRecord sc = new ScatteredRecord();
+            sc.attenuation = new Vector3(1.0f, 1.0f, 1.0f);
+
+            double ri;
+
+            if (h.frontFace)
+                ri = 1.0f / refractionIndex;
+            else ri = refractionIndex;
+
+            Vector3 dir = Vector3.Normalize(r.direction);
+            float cosTheta = Math.Min(Vector3.Dot(-dir, h.normal), 1.0f);
+            float sinTheta = (float)Math.Sqrt(1.0 - cosTheta * cosTheta);
+
+            bool cannotRefract = ri * sinTheta > 1.0f;
+            Vector3 direction;
+
+            if (cannotRefract || reflectance(cosTheta, ri) > rng.NextDouble())
+                direction = reflect(dir, h.normal);
+            else
+                direction = refract(dir, h.normal, ri);
+
+            sc.scatteredRay = new Ray(h.point, direction);
+            sc.scatter = true;
+
+            return sc;
+        }
+
+        private Vector3 refract(Vector3 uv, Vector3 n, double thing)
+        {
+            float cosTheta = Math.Min(Vector3.Dot(-uv, n), 1.0f);
+            Vector3 r1 = (float)thing * (uv + cosTheta * n);
+            Vector3 r2 = (float)-Math.Sqrt(1 - r1.LengthSquared()) * n;
+            return r1 + r2;
+        }
+
+        private Vector3 reflect(Vector3 v, Vector3 n)
+        {
+            return v - 2 * Vector3.Dot(v, n) * n;
+        }
+
+        private static double reflectance(double cosine, double ri)
+        {
+            var r0 = (1 - ri) / (1 + ri);
+            r0 = r0 * r0;
+            return r0 + (1 - r0) * Math.Pow((1 - cosine), 5);
         }
     }
 }
