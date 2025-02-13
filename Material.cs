@@ -61,16 +61,16 @@ namespace Ray_Tracer
         private Vector3 color;
         double fuzz;
 
-        public Metal(Vector3 color) //, double fuzz)
+        public Metal(Vector3 color, double fuzz)
         {
             this.color = color;
-            /*if (fuzz < 1.0)
+            if (fuzz < 1.0)
             {
                 if (fuzz > 0.0)
                     this.fuzz = fuzz;
                 else this.fuzz = 0.0;
             }
-            else this.fuzz = 1.0;*/
+            else this.fuzz = 1.0;
         }
 
         public override ScatteredRecord scatter(Ray r, HitRecord h)
@@ -78,7 +78,8 @@ namespace Ray_Tracer
             ScatteredRecord sc = new ScatteredRecord();
 
             Vector3 reflected = reflect(Vector3.Normalize(r.direction), h.normal);
-            sc.scatteredRay = new Ray(h.point, reflected);// + randomUnitVector() * (float) fuzz);
+            reflected = Vector3.Normalize(reflected) + ((float) fuzz * randomUnitVector());
+            sc.scatteredRay = new Ray(h.point, reflected);
             sc.attenuation = color;
             sc.scatter = Vector3.Dot(sc.scatteredRay.direction, h.normal) > 0.0;
 

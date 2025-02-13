@@ -54,8 +54,8 @@ namespace Ray_Tracer
 
             Material m1 = new Lambartian(new Vector3(0.8f, 0.8f, 0.0f));
             Material m2 = new Lambartian(new Vector3(0.1f, 0.2f, 0.5f));
-            Material m3 = new Metal(new Vector3(0.8f, 0.8f, 0.8f));
-            Material m4 = new Metal(new Vector3(0.8f, 0.6f, 0.2f));
+            Material m3 = new Metal(new Vector3(0.8f, 0.8f, 0.8f), 0.3f);
+            Material m4 = new Metal(new Vector3(0.8f, 0.6f, 0.2f), 1.0f);
 
             world.Add(new Sphere(new Vector3(0.0f, -100.5f, -1.0f), 100.0f, m1));
             world.Add(new Sphere(new Vector3(0.0f, 0.0f, -1.2f), 0.5f, m2));
