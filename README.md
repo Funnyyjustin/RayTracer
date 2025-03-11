@@ -13,6 +13,8 @@ If you have any questions, feel free to reach out to me.
 	- Diffuse materials are represented by Lambertian reflectance.
 - The ray tracer supports antialiasing.
 
+![Example image of the Ray Tracer](example.png)
+
 ## Future work
 
 - Currently, the camera is only static in one location. I plan on adding support for the camera, so it can be placed and rotated.
